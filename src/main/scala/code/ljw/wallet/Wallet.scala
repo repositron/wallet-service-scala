@@ -26,7 +26,7 @@ object Wallet {
    */
   sealed trait Command extends CborSerializable
 
-  final case class AddItem(
+  final case class AddBtc(
                             dateTime: String,
                             amount: Double,
                             replyTo: ActorRef[StatusReply[Summary]]) extends Command
@@ -37,7 +37,7 @@ object Wallet {
                              state: State,
                              command: Command): ReplyEffect[Event, State] = {
     command match {
-      case AddItem(datetime, amount, replyTo) =>
+      case AddBtc(datetime, amount, replyTo) =>
         if (state.hasItem(datetime))
           Effect.reply(replyTo)(
             StatusReply.Error(
