@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "code.ljw.wallet.proto";
+
+package wallet;
+
+service WalletService {
+  rpc AddBtc (AddBtcRequest) returns (AddBtcResponse) {}
+
+}
+
+message Btc {
+  string datetime = 1;
+  double amount = 2;
+}
+
+message AddBtcRequest {
+  string datetime = 1;
+  double amount = 2;
+}
+
+message AddBtcResponse {
+  bool ok = 1;
+}
