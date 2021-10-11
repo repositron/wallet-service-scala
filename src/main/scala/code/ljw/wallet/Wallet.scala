@@ -72,20 +72,31 @@ object Wallet {
   val EntityKey: EntityTypeKey[Command] =
     EntityTypeKey[Command]("Wallet")
 
+  /*
+   * User several tags to distribute over several projection instances
+   */
+  val tags = Vector.tabulate(5)(i => s"wallet-tags-$i")
+
   def init(system: ActorSystem[_]): Unit = {
-    ClusterSharding(system).init(Entity(EntityKey) { entityContext =>
-      Wallet(entityContext.entityId)
-    })
+    val behaviorFactory: EntityContext[Command] => Behavior[Command] = {
+      entityContext =>
+        val i = math.abs(entityContext.entityId.hashCode % tags.size)
+        val selectedTag = tags(i)
+        Wallet(entityContext.entityId, selectedTag)
+    }
+
+    ClusterSharding(system).init(Entity(EntityKey)(behaviorFactory))
   }
 
-  def apply(datetime: String): Behavior[Command] = {
+  def apply(walletId: String, projectionTag: String): Behavior[Command] = {
     EventSourcedBehavior
       .withEnforcedReplies[Command, Event, State](
-        persistenceId = PersistenceId(EntityKey.name, datetime),
+        persistenceId = PersistenceId(EntityKey.name, walletId),
         emptyState = State.empty,
         commandHandler =
-          (state, command) => handleCommand(datetime, state, command),
+          (state, command) => handleCommand(walletId, state, command),
         eventHandler = (state, event) => handleEvent(state, event))
+      .withTagger(_ => Set(projectionTag))
       .withRetention(RetentionCriteria
         .snapshotEvery(numberOfEvents = 100, keepNSnapshots = 3))
       .onPersistFailure(
@@ -107,44 +118,6 @@ object Wallet {
    * Summary of the shopping cart state, used in reply messages.
    */
   final case class Summary(items: Map[String, Double]) extends CborSerializable
-
-/*  def init(system: ActorSystem[_]): Unit = {
-    val behaviorFactory: EntityContext[Command] => Behavior[Command] = {
-      entityContext =>
-        val i = math.abs(entityContext.entityId.hashCode % tags.size)
-        val selectedTag = tags(i)
-        Wallet(entityContext.entityId, selectedTag)
-    }
-    ClusterSharding(system).init(Entity(EntityKey)(behaviorFactory))
-  }
-
-  def apply(cartId: String, projectionTag: String): Behavior[Command] = {
-    EventSourcedBehavior
-      .withEnforcedReplies[Command, Event, State](
-        persistenceId = PersistenceId(EntityKey.name, cartId),
-        emptyState = State.empty,
-        commandHandler =
-          (state, command) => handleCommand(cartId, state, command),
-        eventHandler = (state, event) => handleEvent(state, event))
-      .withTagger(_ => Set(projectionTag))
-      .withRetention(RetentionCriteria
-        .snapshotEvery(numberOfEvents = 100, keepNSnapshots = 3))
-      .onPersistFailure(
-        SupervisorStrategy.restartWithBackoff(200.millis, 5.seconds, 0.1))
-  }*/
-
- /* private def handleCommand(
-                             datetime: String,
-                             state: State,
-                             command: Command): ReplyEffect[Event, State] = {
-    // The shopping cart behavior changes if it's checked out or not.
-    // The commands are handled differently for each case.
-    if (state.isCheckedOut)
-      checkedOutShoppingCart(cartId, state, command)
-    else
-      openShoppingCart(cartId, state, command)
-  }*/
-
 
   private def handleEvent(state: State, event: Event) = {
     event match {

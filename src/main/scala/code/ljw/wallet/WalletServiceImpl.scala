@@ -6,15 +6,22 @@ import akka.actor.typed.{ActorSystem, DispatcherSelector}
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.grpc.GrpcServiceException
 import akka.util.Timeout
-
 import io.grpc.Status
 import org.slf4j.LoggerFactory
 import akka.actor.typed.ActorRef
 import akka.pattern.StatusReply
+import code.ljw.wallet.history.{HistoryRepository, ScalikeJdbcSession}
+//import code.ljw.wallet.proto.{BtcHistoryRequest, BtcHistoryResponse}
 
-case class WalletServiceImpl()//system: ActorSystem[_])
-  extends proto.WalletService {
-  //import system.executionContext
+case class WalletServiceImpl(
+  system: ActorSystem[_], historyRepository: HistoryRepository)
+    extends proto.WalletService {
+
+  private val blockingJdbcExecutor: ExecutionContext =
+    system.dispatchers.lookup(
+      DispatcherSelector
+        .fromConfig("akka.projection.jdbc.blocking-jdbc-dispatcher")
+    )
 
   private val logger = LoggerFactory.getLogger(getClass)
 
@@ -45,6 +52,20 @@ case class WalletServiceImpl()//system: ActorSystem[_])
     convertError(response)*/
   }
 
+  override def btcHistory(in: proto.BtcHistoryRequest): Future[proto.BtcHistoryResponse] = {
+    Future {
+      ScalikeJdbcSession.withSession { session =>
+        historyRepository.getItem(session, in.itemId)
+      }
+    }(blockingJdbcExecutor).map {
+      case Some(count) =>
+        proto.GetItemPopularityResponse(in.itemId, count)
+      case None =>
+        proto.GetItemPopularityResponse(in.itemId, 0L)
+    }
+  }
+  }
+
 
 
 
@@ -60,5 +81,6 @@ case class WalletServiceImpl()//system: ActorSystem[_])
             Status.INVALID_ARGUMENT.withDescription(exc.getMessage)))
     }
   }*/
+
 
 }
