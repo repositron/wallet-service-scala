@@ -33,40 +33,41 @@ object Wallet {
 
 
   private def handleCommand(
-                             datetime: String,
-                             state: State,
-                             command: Command): ReplyEffect[Event, State] = {
+   datetime: String,
+   state: State,
+   command: Command): ReplyEffect[Event, State] = {
     command match {
       case AddBtc(datetime, amount, replyTo) =>
         if (state.hasItem(datetime))
           Effect.reply(replyTo)(
+            // TODO this is not an error
             StatusReply.Error(
               s"Item '$datetime' was already added to this shopping cart"))
         else
           Effect
-            .persist(ItemAdded(datetime, amount))
-            .thenReply(replyTo) { updatedCart =>
-              StatusReply.Success(Summary(updatedCart.items))
+            .persist(BtcAdded(datetime, amount))
+            .thenReply(replyTo) { updatedWallet =>
+              StatusReply.Success(Summary(updatedWallet.btcPayments))
             }
     }
   }
 
-  final case class State(items: Map[String, Double]) extends CborSerializable {
+  final case class State(btcPayments: Map[String, Double]) extends CborSerializable {
 
     def hasItem(datetime: String): Boolean =
-      items.contains(datetime)
+      btcPayments.contains(datetime)
 
     def isEmpty: Boolean =
-      items.isEmpty
+      btcPayments.isEmpty
 
     def updateItem(datetime: String, amount: Double): State = {
-      copy(items = items + (datetime -> amount))
+      copy(btcPayments = btcPayments + (datetime -> amount))
     }
   }
 
 
   object State {
-    val empty = State(items = Map.empty)
+    val empty = State(btcPayments = Map.empty)
   }
 
   val EntityKey: EntityTypeKey[Command] =
@@ -110,18 +111,12 @@ object Wallet {
   }
 
 
-  final case class ItemAdded(datetime: String, amount: Double)
+  final case class BtcAdded(datetime: String, amount: Double)
     extends Event
-
-
-  /**
-   * Summary of the shopping cart state, used in reply messages.
-   */
-  final case class Summary(items: Map[String, Double]) extends CborSerializable
 
   private def handleEvent(state: State, event: Event) = {
     event match {
-      case ItemAdded(datetime, amount) =>
+      case BtcAdded(datetime, amount) =>
         state.updateItem(datetime, amount)
     }
   }

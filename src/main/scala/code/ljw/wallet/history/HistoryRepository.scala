@@ -1,5 +1,6 @@
 package code.ljw.wallet.history
 
+import org.slf4j.LoggerFactory
 import scalikejdbc._
 
 trait HistoryRepository {
@@ -16,6 +17,8 @@ trait HistoryRepository {
 }
 
 class HistoryRepositoryImpl extends HistoryRepository {
+  private val logger = LoggerFactory.getLogger(getClass)
+
   override def update(session: ScalikeJdbcSession, datetime: String, amount: Double): Unit = {
       session.db.withinTx { implicit dbSession =>
         // insert new value or update value
@@ -31,11 +34,17 @@ class HistoryRepositoryImpl extends HistoryRepository {
                           datetimeFrom: String,
                           datetimeTo: String): List[BtcDailyTotal] = {
     session.db.withinTx { implicit dbSession =>
-    sql"""
-           SELECT datetime, amount FROM btc_wallet_history WHERE $datetimeFrom <= datatime AND datatime <= $datetimeTo
+      logger.info(s"HistoryRepositoryImpl.btcHistory ${datetimeFrom} to ${datetimeTo}")
+      val sqlStmt = sql"""
+           SELECT datetime, amount FROM btc_wallet_history
          """
-      .map(implicit rs => BtcDailyTotal(BtcDailyTotal.syntax.resultName))
-      .list.apply()
+      // WHERE $datetimeFrom <= datatime AND datatime <= $datetimeTo
+      logger.info(sqlStmt.statement)
+      val btcHistory = sqlStmt
+        .map(implicit rs => BtcDailyTotal(BtcDailyTotal.syntax.resultName))
+        .list().apply()
+      logger.info(btcHistory.mkString(", "))
+      btcHistory
     }
   }
 

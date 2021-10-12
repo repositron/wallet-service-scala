@@ -7,8 +7,6 @@ package wallet;
 
 service WalletService {
   rpc AddBtc (AddBtcRequest) returns (AddBtcResponse) {}
-
-
   rpc BtcHistory (BtcHistoryRequest) returns (BtcHistoryResponse) {}
 
 }
@@ -29,7 +27,7 @@ message AddBtcResponse {
 
 message BtcHistoryRequest {
   string datetimeFrom = 1;
-  string datetimeEnd = 2;
+  string datetimeTo = 2;
 }
 
 message BtcPayment {

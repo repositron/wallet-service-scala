@@ -28,18 +28,23 @@ case class WalletServiceImpl(
 
   private val logger = LoggerFactory.getLogger(getClass)
 
- /* implicit private val timeout: Timeout =
+  implicit private val timeout: Timeout =
     Timeout.create(
       system.settings.config.getDuration("wallet-service.ask-timeout"))
-*/
-  //private val sharding = ClusterSharding(system)
+
+  private val sharding = ClusterSharding(system)
 
 
 
 
   override def addBtc(in: proto.AddBtcRequest): Future[proto.AddBtcResponse] = {
     // could return total funds?
-    logger.info("addBtc{} to cart {}", in.amount, in.datetime)
+    logger.info("WalletServiceImpl.addBtc{} to cart {}", in.amount, in.datetime)
+    val entityRef = sharding.entityRefFor(Wallet.EntityKey, in.datetime)
+    val reply: Future[Boolean] =
+      entityRef.askWithStatus(Wallet.AddBtc(in.datetime, in.amount))
+    val response = reply.map(cart => toProtoCart(cart))
+    convertError(response)
     Future.successful(
       proto.AddBtcResponse(true))
     /*
@@ -51,9 +56,10 @@ case class WalletServiceImpl(
   }
 
   override def btcHistory(in: proto.BtcHistoryRequest): Future[proto.BtcHistoryResponse] = {
+    logger.info(s"WalletServiceImpl.btcHistory from ${in.datetimeFrom} to  ${in.datetimeTo}")
     Future {
       ScalikeJdbcSession.withSession { session =>
-        historyRepository.btcHistory(session, in.datetimeFrom, in.datetimeEnd)
+        historyRepository.btcHistory(session, in.datetimeFrom, in.datetimeTo)
       }
     }(blockingJdbcExecutor).map { history =>
       val btcPaymentHistory = history.map(btc => BtcPayment(btc.datetime.toString, btc.amount))
