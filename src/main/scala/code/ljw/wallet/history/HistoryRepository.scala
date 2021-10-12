@@ -12,7 +12,7 @@ trait HistoryRepository {
                   session: ScalikeJdbcSession,
                   datetimeFrom: String,
                   datetimeTo: String
-                ): List[String]
+                ): List[BtcDailyTotal]
 }
 
 class HistoryRepositoryImpl extends HistoryRepository {
@@ -27,12 +27,16 @@ class HistoryRepositoryImpl extends HistoryRepository {
 
   }
 
-  override def btcHistory(session: ScalikeJdbcSession, datetimeFrom: String, datetimeTo: String): List[String] = {
+  override def btcHistory(session: ScalikeJdbcSession,
+                          datetimeFrom: String,
+                          datetimeTo: String): List[BtcDailyTotal] = {
     session.db.withinTx { implicit dbSession =>
     sql"""
-           SELECT datetime, amount FROM btc_wallet_history WHERE datetimeFrom <= $datatime AND datatime <= $datetimeTo
+           SELECT datetime, amount FROM btc_wallet_history WHERE $datetimeFrom <= datatime AND datatime <= $datetimeTo
          """
-      .map(rs => GroupMember(rs))
+      .map(implicit rs => BtcDailyTotal(BtcDailyTotal.syntax.resultName))
+      .list.apply()
     }
   }
+
 }

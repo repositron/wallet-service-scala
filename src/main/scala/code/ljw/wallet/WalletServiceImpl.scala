@@ -11,11 +11,14 @@ import org.slf4j.LoggerFactory
 import akka.actor.typed.ActorRef
 import akka.pattern.StatusReply
 import code.ljw.wallet.history.{HistoryRepository, ScalikeJdbcSession}
+import code.ljw.wallet.proto.BtcPayment
 //import code.ljw.wallet.proto.{BtcHistoryRequest, BtcHistoryResponse}
 
 case class WalletServiceImpl(
   system: ActorSystem[_], historyRepository: HistoryRepository)
     extends proto.WalletService {
+
+  import system.executionContext
 
   private val blockingJdbcExecutor: ExecutionContext =
     system.dispatchers.lookup(
@@ -32,11 +35,6 @@ case class WalletServiceImpl(
   //private val sharding = ClusterSharding(system)
 
 
-  /*private val blockingJdbcExecutor: ExecutionContext =
-    system.dispatchers.lookup(
-      DispatcherSelector
-        .fromConfig("akka.projection.jdbc.blocking-jdbc-dispatcher")
-    )*/
 
 
   override def addBtc(in: proto.AddBtcRequest): Future[proto.AddBtcResponse] = {
@@ -55,21 +53,22 @@ case class WalletServiceImpl(
   override def btcHistory(in: proto.BtcHistoryRequest): Future[proto.BtcHistoryResponse] = {
     Future {
       ScalikeJdbcSession.withSession { session =>
-        historyRepository.getItem(session, in.itemId)
+        historyRepository.btcHistory(session, in.datetimeFrom, in.datetimeEnd)
       }
-    }(blockingJdbcExecutor).map {
-      case Some(count) =>
-        proto.GetItemPopularityResponse(in.itemId, count)
+    }(blockingJdbcExecutor).map { history =>
+      val btcPaymentHistory = history.map(btc => BtcPayment(btc.datetime.toString, btc.amount))
+      proto.BtcHistoryResponse(btcPaymentHistory)
+   /*   case List(historyResponse) =>
+        proto.BtcHistoryResponse(historyResponse)
       case None =>
-        proto.GetItemPopularityResponse(in.itemId, 0L)
+        proto.GetItemPopularityResponse(in.itemId, 0L)*/
     }
   }
-  }
 
 
 
 
-/*  private def convertError[T](response: Future[T]): Future[T] = {
+  private def convertError[T](response: Future[T]): Future[T] = {
     response.recoverWith {
       case _: TimeoutException =>
         Future.failed(
@@ -80,7 +79,7 @@ case class WalletServiceImpl(
           new GrpcServiceException(
             Status.INVALID_ARGUMENT.withDescription(exc.getMessage)))
     }
-  }*/
+  }
 
 
 }
