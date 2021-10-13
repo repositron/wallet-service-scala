@@ -34,9 +34,12 @@ class HistoryRepositoryImpl extends HistoryRepository {
                           datetimeFrom: String,
                           datetimeTo: String): List[BtcDailyTotal] = {
     session.db.withinTx { implicit dbSession =>
+      val from = DateTime.zoneDateTimeToDate(datetimeFrom)
+      val to = DateTime.zoneDateTimeToDate(datetimeTo)
+
       logger.info(s"HistoryRepositoryImpl.btcHistory ${datetimeFrom} to ${datetimeTo}")
       val sqlStmt = sql"""
-           SELECT datetime, amount FROM btc_wallet_history WHERE $datetimeFrom <= datatime AND datatime <= $datetimeTo
+           SELECT datetime, amount FROM btc_wallet_history WHERE $from <= datetime AND datetime <= $to
          """
 
       logger.info(sqlStmt.statement)
