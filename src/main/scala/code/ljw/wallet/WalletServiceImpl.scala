@@ -8,12 +8,9 @@ import akka.grpc.GrpcServiceException
 import akka.util.Timeout
 import io.grpc.Status
 import org.slf4j.LoggerFactory
-import akka.actor.typed.ActorRef
-import akka.pattern.StatusReply
-import akka.pattern.StatusReply.Success
 import code.ljw.wallet.repository.{HistoryRepository, ScalikeJdbcSession}
 import code.ljw.wallet.proto.BtcPayment
-//import code.ljw.wallet.proto.{BtcHistoryRequest, BtcHistoryResponse}
+
 
 case class WalletServiceImpl(
   system: ActorSystem[_], historyRepository: HistoryRepository)
@@ -52,12 +49,8 @@ case class WalletServiceImpl(
         historyRepository.btcHistory(session, in.datetimeFrom, in.datetimeTo)
       }
     }(blockingJdbcExecutor).map { history =>
-      val btcPaymentHistory = history.map(btc => BtcPayment(btc.datetime.toString, btc.amount))
+      val btcPaymentHistory = history.map(btc => BtcPayment(btc.btcdatetime.toString, btc.amount))
       proto.BtcHistoryResponse(btcPaymentHistory)
-   /*   case List(historyResponse) =>
-        proto.BtcHistoryResponse(historyResponse)
-      case None =>
-        proto.GetItemPopularityResponse(in.itemId, 0L)*/
     }
   }
 

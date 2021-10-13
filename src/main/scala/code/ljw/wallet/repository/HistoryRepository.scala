@@ -29,7 +29,7 @@ class HistoryRepositoryImpl extends HistoryRepository {
   override def update(session: ScalikeJdbcSession, datetime: String, amount: Double): Unit = {
       session.db.withinTx { implicit dbSession =>
         // insert new value or update value
-        val utcDateTime = DateTime.zonedDateTimeStrToUtc(datetime)
+        val utcDateTime = DateTime.zonedDateTimeStrToUtcDate(datetime)
         sql"""
            INSERT INTO btc_wallet_history (btcdatetime, amount) VALUES ($utcDateTime, $amount)
            ON CONFLICT (btcdatetime) DO UPDATE SET amount = btc_wallet_history.amount + $amount
@@ -51,12 +51,23 @@ class HistoryRepositoryImpl extends HistoryRepository {
       val fromDt = LocalDate.parse(from, DateTimeFormatter.ISO_DATE)
       val toDt = LocalDate.parse(to, DateTimeFormatter.ISO_DATE)
       logger.info(s"HistoryRepositoryImpl.btcHistory ${datetimeFrom} to ${datetimeTo}")
-
+      val d = BtcDailyTotal.syntax("d")
+     /* val query = withSQL {
+        select
+          .from(BtcDailyTotal as d)
+          .where
+          .le(fromDt, d.btcdatetime)
+          .
+      }*/
      /* val sqlStmt = SQL("SELECT datetime, amount FROM btc_wallet_history WHERE '{f}' <= datetime AND datetime <= '{t}'")
         .bindByName(fromDt -> 'f, toDt -> 't)
 */
-        val sqlStmt = sql"SELECT btcdatetime, amount FROM btc_wallet_history WHERE ${fromDt} <= btcdatetime AND btcdatetime <= ${toDt}"
-//      val sqlStmt = sql"SELECT datetime, amount FROM btc_wallet_history WHERE TO_TIMESTAMP('${from}', 'YYYY-MM-DD') <= datetime AND datetime <= TO_TIMESTAMP('${to}', 'YYYY-MM-DD')"
+        val sqlStmt = sql"""
+          SELECT btcdatetime, amount
+          FROM btc_wallet_history
+          WHERE ${from}::DATE  <= btcdatetime AND btcdatetime <= ${to}::DATE
+          """
+       // val sqlStmt = sql"SELECT btcdatetime, amount FROM btc_wallet_history WHERE TO_TIMESTAMP('${from}', 'YYYY-MM-DD') <= btcdatetime AND btcdatetime <= TO_TIMESTAMP('${to}', 'YYYY-MM-DD')"
 
 
       logger.info(sqlStmt.statement)

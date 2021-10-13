@@ -1,6 +1,6 @@
 
 CREATE TABLE IF NOT EXISTS public.btc_wallet_history (
-      btcdatetime date NOT NULL,
+      btcdatetime date PRIMARY KEY,
       amount double precision NOT NULL);
 
 CREATE INDEX idx_btcdatetime
