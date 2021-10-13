@@ -52,16 +52,12 @@ class HistoryRepositoryImpl extends HistoryRepository {
       val toDt = LocalDate.parse(to, DateTimeFormatter.ISO_DATE)
       logger.info(s"HistoryRepositoryImpl.btcHistory ${datetimeFrom} to ${datetimeTo}")
 
-     /* val sqlStmt = SQL("SELECT datetime, amount FROM btc_wallet_history WHERE '{f}' <= datetime AND datetime <= '{t}'")
-        .bindByName(fromDt -> 'f, toDt -> 't)
-*/
       val b = BtcDailyTotal.syntax("b")
       val sqlStmt = sql"""
         SELECT ${b.btcdatetime}, ${b.amount}
         FROM ${BtcDailyTotal as b}
+        WHERE ${fromDt} <= ${b.btcdatetime} AND ${b.btcdatetime} <= ${toDt}
         """
-       // val sqlStmt = sql"SELECT btcdatetime, amount FROM btc_wallet_history WHERE TO_TIMESTAMP('${from}', 'YYYY-MM-DD') <= btcdatetime AND btcdatetime <= TO_TIMESTAMP('${to}', 'YYYY-MM-DD')"
-      //WHERE ${fromDt} <= ${b.btcdatetime} AND ${b.btcdatetime} <= ${toDt}
 
       logger.info(sqlStmt.statement)
       val btcHistory = sqlStmt

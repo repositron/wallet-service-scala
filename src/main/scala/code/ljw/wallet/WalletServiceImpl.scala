@@ -49,7 +49,7 @@ case class WalletServiceImpl(
         historyRepository.btcHistory(session, in.datetimeFrom, in.datetimeTo)
       }
     }(blockingJdbcExecutor).map { history =>
-      val btcPaymentHistory = history.map(btc => BtcPayment(btc.btcdatetime.toString, btc.amount))
+      val btcPaymentHistory = history.map(btc => BtcPayment(btc.btcdatetime.toString + "T00:00:00+00:00", btc.amount))
       proto.BtcHistoryResponse(btcPaymentHistory)
     }
   }
