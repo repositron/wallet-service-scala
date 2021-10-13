@@ -10,7 +10,7 @@ import akka.projection.eventsourced.EventEnvelope
 import akka.projection.eventsourced.scaladsl.EventSourcedProvider
 import akka.projection.jdbc.scaladsl.JdbcProjection
 import akka.projection.scaladsl.{ExactlyOnceProjection, SourceProvider}
-import code.ljw.wallet.history.{HistoryRepository, ScalikeJdbcSession}
+import code.ljw.wallet.repository.{HistoryRepository, ScalikeJdbcSession}
 
 object BtcHistoryProjection {
   def init(

@@ -1,4 +1,4 @@
-package code.ljw.wallet.history
+package code.ljw.wallet.repository
 
 
 import scalikejdbc._

@@ -10,7 +10,8 @@ import io.grpc.Status
 import org.slf4j.LoggerFactory
 import akka.actor.typed.ActorRef
 import akka.pattern.StatusReply
-import code.ljw.wallet.history.{HistoryRepository, ScalikeJdbcSession}
+import akka.pattern.StatusReply.Success
+import code.ljw.wallet.repository.{HistoryRepository, ScalikeJdbcSession}
 import code.ljw.wallet.proto.BtcPayment
 //import code.ljw.wallet.proto.{BtcHistoryRequest, BtcHistoryResponse}
 
@@ -34,25 +35,14 @@ case class WalletServiceImpl(
 
   private val sharding = ClusterSharding(system)
 
-
-
-
   override def addBtc(in: proto.AddBtcRequest): Future[proto.AddBtcResponse] = {
     // could return total funds?
     logger.info("WalletServiceImpl.addBtc{} to cart {}", in.amount, in.datetime)
     val entityRef = sharding.entityRefFor(Wallet.EntityKey, in.datetime)
     val reply: Future[Boolean] =
-      entityRef.askWithStatus(Wallet.AddBtc(in.datetime, in.amount))
-    val response = reply.map(cart => toProtoCart(cart))
+      entityRef.askWithStatus(Wallet.AddBtc(in.datetime, in.amount, _))
+    val response = reply.map(proto.AddBtcResponse(_))
     convertError(response)
-    Future.successful(
-      proto.AddBtcResponse(true))
-    /*
-    val entityRef = sharding.entityRefFor(ShoppingCart.EntityKey, in.cartId)
-    val reply: Future[ShoppingCart.Summary] =
-      entityRef.askWithStatus(ShoppingCart.AddItem(in.itemId, in.quantity, _))
-    val response = reply.map(cart => toProtoCart(cart))
-    convertError(response)*/
   }
 
   override def btcHistory(in: proto.BtcHistoryRequest): Future[proto.BtcHistoryResponse] = {
@@ -71,9 +61,6 @@ case class WalletServiceImpl(
     }
   }
 
-
-
-
   private def convertError[T](response: Future[T]): Future[T] = {
     response.recoverWith {
       case _: TimeoutException =>
@@ -86,6 +73,5 @@ case class WalletServiceImpl(
             Status.INVALID_ARGUMENT.withDescription(exc.getMessage)))
     }
   }
-
 
 }

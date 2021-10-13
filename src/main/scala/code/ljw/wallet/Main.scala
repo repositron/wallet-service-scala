@@ -4,7 +4,7 @@ import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
-import code.ljw.wallet.history.{HistoryRepositoryImpl, ScalikeJdbcSetup}
+import code.ljw.wallet.repository.{HistoryRepositoryImpl, ScalikeJdbcSetup}
 import org.slf4j.LoggerFactory
 
 import scala.util.control.NonFatal

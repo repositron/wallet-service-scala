@@ -1,4 +1,4 @@
-package code.ljw.wallet.history
+package code.ljw.wallet.repository
 
 import akka.japi.function.Function
 import akka.projection.jdbc.JdbcSession

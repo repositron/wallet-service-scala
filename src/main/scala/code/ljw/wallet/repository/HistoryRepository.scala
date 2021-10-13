@@ -1,4 +1,4 @@
-package code.ljw.wallet.history
+package code.ljw.wallet.repository
 
 import org.slf4j.LoggerFactory
 import scalikejdbc._
@@ -36,9 +36,9 @@ class HistoryRepositoryImpl extends HistoryRepository {
     session.db.withinTx { implicit dbSession =>
       logger.info(s"HistoryRepositoryImpl.btcHistory ${datetimeFrom} to ${datetimeTo}")
       val sqlStmt = sql"""
-           SELECT datetime, amount FROM btc_wallet_history
+           SELECT datetime, amount FROM btc_wallet_history WHERE $datetimeFrom <= datatime AND datatime <= $datetimeTo
          """
-      // WHERE $datetimeFrom <= datatime AND datatime <= $datetimeTo
+
       logger.info(sqlStmt.statement)
       val btcHistory = sqlStmt
         .map(implicit rs => BtcDailyTotal(BtcDailyTotal.syntax.resultName))

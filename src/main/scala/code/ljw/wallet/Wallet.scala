@@ -20,17 +20,15 @@ import akka.persistence.typed.scaladsl.RetentionCriteria
 
 object Wallet {
 
-  // commands are the external API of an entity
   /**
-   * This interface defines all the commands (messages) that the ShoppingCart actor supports.
+   * This interface defines all the commands (messages) that the Wallet actor supports.
    */
   sealed trait Command extends CborSerializable
 
   final case class AddBtc(
-                            dateTime: String,
-                            amount: Double,
-                            replyTo: ActorRef[StatusReply[Summary]]) extends Command
-
+      dateTime: String,
+      amount: Double,
+      replyTo: ActorRef[StatusReply[Boolean]]) extends Command
 
   private def handleCommand(
    datetime: String,
@@ -38,33 +36,30 @@ object Wallet {
    command: Command): ReplyEffect[Event, State] = {
     command match {
       case AddBtc(datetime, amount, replyTo) =>
-        if (state.hasItem(datetime))
-          Effect.reply(replyTo)(
-            // TODO this is not an error
-            StatusReply.Error(
-              s"Item '$datetime' was already added to this shopping cart"))
-        else
-          Effect
-            .persist(BtcAdded(datetime, amount))
-            .thenReply(replyTo) { updatedWallet =>
-              StatusReply.Success(Summary(updatedWallet.btcPayments))
-            }
+        Effect
+          .persist(BtcAdded(datetime, amount))
+          .thenReply(replyTo) { updatedWallet =>
+            StatusReply.Success(true)
+          }
     }
   }
 
-  final case class State(btcPayments: Map[String, Double]) extends CborSerializable {
-
-    def hasItem(datetime: String): Boolean =
-      btcPayments.contains(datetime)
+  /**
+   *  State is a map of date to a list of amounts
+   */
+  final case class State(btcPayments: Map[String, List[Double]]) extends CborSerializable {
 
     def isEmpty: Boolean =
       btcPayments.isEmpty
 
+
     def updateItem(datetime: String, amount: Double): State = {
-      copy(btcPayments = btcPayments + (datetime -> amount))
+      btcPayments.get(datetime) match {
+        case Some(a) => copy(btcPayments = btcPayments + (datetime -> (amount :: a)))
+        case None => copy(btcPayments = btcPayments + (datetime -> List(amount)))
+      }
     }
   }
-
 
   object State {
     val empty = State(btcPayments = Map.empty)
@@ -73,7 +68,7 @@ object Wallet {
   val EntityKey: EntityTypeKey[Command] =
     EntityTypeKey[Command]("Wallet")
 
-  /*
+  /**
    * User several tags to distribute over several projection instances
    */
   val tags = Vector.tabulate(5)(i => s"wallet-tags-$i")

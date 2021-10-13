@@ -3,7 +3,7 @@ package code.ljw.wallet
 import akka.actor.typed.ActorSystem
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.jdbc.scaladsl.JdbcHandler
-import code.ljw.wallet.history.{HistoryRepository, ScalikeJdbcSession}
+import code.ljw.wallet.repository.{HistoryRepository, ScalikeJdbcSession}
 import org.slf4j.LoggerFactory
 
 class BtcHistoryProjectionHandler(
