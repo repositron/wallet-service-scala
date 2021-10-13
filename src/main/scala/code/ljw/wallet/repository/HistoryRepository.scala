@@ -19,11 +19,16 @@ trait HistoryRepository {
 class HistoryRepositoryImpl extends HistoryRepository {
   private val logger = LoggerFactory.getLogger(getClass)
 
+  /**
+   * inserts a datetime, amount in the btc_wallet.history.table. If row
+   * already exists then it will add the amount to the existing row
+   */
   override def update(session: ScalikeJdbcSession, datetime: String, amount: Double): Unit = {
       session.db.withinTx { implicit dbSession =>
         // insert new value or update value
+        val utcDateTime = DateTime.zonedDateTimeStrToUtc(datetime)
         sql"""
-           INSERT INTO btc_wallet_history (datetime, amount) VALUES ($datetime, $amount)
+           INSERT INTO btc_wallet_history (datetime, amount) VALUES ($utcDateTime, $amount)
            ON CONFLICT (datetime) DO UPDATE SET amount = btc_wallet_history.amount + $amount
          """.executeUpdate().apply()
       }
@@ -33,9 +38,12 @@ class HistoryRepositoryImpl extends HistoryRepository {
   override def btcHistory(session: ScalikeJdbcSession,
                           datetimeFrom: String,
                           datetimeTo: String): List[BtcDailyTotal] = {
+
+    session.db.begin()
     session.db.withinTx { implicit dbSession =>
-      val from = DateTime.zoneDateTimeToDate(datetimeFrom)
-      val to = DateTime.zoneDateTimeToDate(datetimeTo)
+
+      val from = DateTime.zoneDateTimeToZeroedTime(datetimeFrom)
+      val to = DateTime.zoneDateTimeToZeroedTime(datetimeTo)
 
       logger.info(s"HistoryRepositoryImpl.btcHistory ${datetimeFrom} to ${datetimeTo}")
       val sqlStmt = sql"""
@@ -46,6 +54,7 @@ class HistoryRepositoryImpl extends HistoryRepository {
       val btcHistory = sqlStmt
         .map(implicit rs => BtcDailyTotal(BtcDailyTotal.syntax.resultName))
         .list().apply()
+      session.commit()
       logger.info(btcHistory.mkString(", "))
       btcHistory
     }

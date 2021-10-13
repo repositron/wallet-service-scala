@@ -17,16 +17,31 @@ object DateTime {
     utcDateTime
   }
 
+  def zonedDateTimeStrToUtcDt(datetime: String): LocalDateTime = {
+    val zonedDateTime = ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+    val utcDateTime = zonedDateTime
+      .withZoneSameInstant(ZoneOffset.UTC)
+      .toLocalDateTime
+    utcDateTime
+  }
+
   /**
    * converts datetime to utc and sets the time to 00:00:00
    * 2011-10-05T10:48:01+00:00 => 2011-10-05T00:00:00
    */
-  def zoneDateTimeToDate(datetime: String): String = {
+  def zoneDateTimeToZeroedTime(datetime: String): String = {
     val zonedDateTime = ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
     val utcDateTime = zonedDateTime
       .withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime
     utcDateTime.withHour(0).withMinute(0).withSecond(0).withNano(0)
       .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+  }
+
+  def zoneDateTimeToZeroedTimeDt(datetime: String): LocalDateTime = {
+      val zonedDateTime = ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+      val utcDateTime = zonedDateTime
+        .withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime
+      utcDateTime.withHour(0).withMinute(0).withSecond(0).withNano(0)
   }
 
 }

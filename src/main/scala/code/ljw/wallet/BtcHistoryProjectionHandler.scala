@@ -20,6 +20,7 @@ class BtcHistoryProjectionHandler(
               session: ScalikeJdbcSession,
               envelope: EventEnvelope[Wallet.Event]): Unit = {
       envelope.event match {
+        // should datetime be event
         case Wallet.BtcAdded(datetime, amount) =>
           repo.update(session, datetime, amount)
       }
