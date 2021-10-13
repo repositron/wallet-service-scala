@@ -3,9 +3,6 @@ package code.ljw.wallet.repository
 import org.slf4j.LoggerFactory
 import scalikejdbc._
 
-import java.time.{LocalDate}
-import java.time.format.DateTimeFormatter
-
 trait HistoryRepository {
   def update(
               session: ScalikeJdbcSession,
@@ -47,16 +44,15 @@ class HistoryRepositoryImpl extends HistoryRepository {
 
       val (from, to) = DateTime.range(datetimeFrom, datetimeTo)
 
-      //TO_TIMESTAMP('2019-10-04', 'YYYY-MM-DD')
-      val fromDt = LocalDate.parse(from, DateTimeFormatter.ISO_DATE)
-      val toDt = LocalDate.parse(to, DateTimeFormatter.ISO_DATE)
+      //val fromDt = LocalDate.parse(from, DateTimeFormatter.ISO_DATE)
+      //val toDt = LocalDate.parse(to, DateTimeFormatter.ISO_DATE)
       logger.info(s"HistoryRepositoryImpl.btcHistory ${datetimeFrom} to ${datetimeTo}")
 
       val b = BtcDailyTotal.syntax("b")
       val sqlStmt = sql"""
         SELECT ${b.btcdatetime}, ${b.amount}
         FROM ${BtcDailyTotal as b}
-        WHERE ${fromDt} <= ${b.btcdatetime} AND ${b.btcdatetime} <= ${toDt}
+        WHERE ${from} <= ${b.btcdatetime} AND ${b.btcdatetime} <= ${to}
         """
 
       logger.info(sqlStmt.statement)

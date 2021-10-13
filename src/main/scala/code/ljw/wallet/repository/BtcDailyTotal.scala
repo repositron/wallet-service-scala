@@ -3,9 +3,9 @@ package code.ljw.wallet.repository
 
 import scalikejdbc._
 
-import java.time.LocalDate
+import java.time.LocalDateTime
 
-case class BtcDailyTotal(btcdatetime: LocalDate, amount: Double)
+case class BtcDailyTotal(btcdatetime: LocalDateTime, amount: Double)
 
 object BtcDailyTotal extends SQLSyntaxSupport[BtcDailyTotal] {
   override val tableName = "btc_wallet_history"
@@ -15,7 +15,7 @@ object BtcDailyTotal extends SQLSyntaxSupport[BtcDailyTotal] {
   def apply(btcResult: ResultName[BtcDailyTotal])(implicit rs: WrappedResultSet) = {
 
     new BtcDailyTotal(
-      btcdatetime = rs.localDate("btcdatetime"),
+      btcdatetime = rs.localDateTime("btcdatetime"),
       amount = rs.double("amount")
     )
   }
