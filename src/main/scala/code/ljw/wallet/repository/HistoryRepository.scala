@@ -39,8 +39,7 @@ class HistoryRepositoryImpl extends HistoryRepository {
                           datetimeFrom: String,
                           datetimeTo: String): List[BtcDailyTotal] = {
 
-    session.db.begin()
-    session.db.withinTx { implicit dbSession =>
+    session.db.readOnly { implicit dbSession =>
 
       val (from, to) = DateTime.range(datetimeFrom, datetimeTo)
 
@@ -60,7 +59,6 @@ class HistoryRepositoryImpl extends HistoryRepository {
         .map(implicit rs => BtcDailyTotal(b.resultName))
         //.map(implicit rs => BtcDailyTotal(BtcDailyTotal.syntax.resultName))
         .list().apply()
-      session.commit()
       logger.info(btcHistory.mkString(", "))
       btcHistory
     }

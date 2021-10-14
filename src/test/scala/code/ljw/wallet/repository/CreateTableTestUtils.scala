@@ -13,7 +13,7 @@ import scala.concurrent.duration._
 object CreateTableTestUtils {
 
   private val createUserTablesFile =
-    Paths.get("ddl-scripts/create_history_tables.sql").toFile
+    Paths.get("ddl-scripts/create-history-tables.sql").toFile
 
   def dropAndRecreateTables(system: ActorSystem[_]): Unit = {
     implicit val sys: ActorSystem[_] = system
@@ -37,10 +37,12 @@ object CreateTableTestUtils {
           _ <- SchemaUtils.applyScript(createUserTablesSql)
         } yield Done,
         30.seconds)
+      LoggerFactory
+        .getLogger("code.ljw.wallet.repository.CreateTableTestUtils")
+        .info("Created tables")
     }
-    LoggerFactory
-      .getLogger("code.ljw.wallet.repository.CreateTableTestUtils")
-      .info("Created tables")
+    else
+      throw new Exception(s"files don't exist")
   }
 
   private def dropUserTables()(

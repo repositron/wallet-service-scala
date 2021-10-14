@@ -16,7 +16,7 @@ import scala.concurrent.duration._
 
 object HistorySpec {
   val config: Config =
-    ConfigFactory.load("repository-integration-test.conf")
+    ConfigFactory.load("history-integration-test.conf")
 }
 
 class HistorySpec
@@ -71,15 +71,18 @@ class HistorySpec
 
       val reply1: Future[Boolean] =
         d1.askWithStatus(Wallet.AddBtc(d1zone1, 200.2, _))
-      reply1.futureValue should ===(true)
+      reply1.futureValue should === (true)
+
+      d1.askWithStatus(Wallet.AddBtc(d1zone1, 20.0, _))
 
       eventually {
         ScalikeJdbcSession.withSession { session =>
           val h = historyRepository.btcHistory(session, d1zone1, d2zone1)
+          h.head.amount should equal (220.2)
+
 
         }
       }
     }
-
   }
 }
