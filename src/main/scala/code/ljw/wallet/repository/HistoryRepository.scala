@@ -52,6 +52,7 @@ class HistoryRepositoryImpl extends HistoryRepository {
         SELECT ${b.btcdatetime}, ${b.amount}
         FROM ${BtcDailyTotal as b}
         WHERE ${from} <= ${b.btcdatetime} AND ${b.btcdatetime} <= ${to}
+        ORDER BY ${b.btcdatetime}
         """
 
       logger.info(sqlStmt.statement)
